@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>UNSEND — make screenshots safe to share</title>
+<meta name="description" content="Find and permanently redact sensitive information in screenshots. Runs entirely in your browser." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22%230a0a0a%22/><rect x=%2222%22 y=%2244%22 width=%2256%22 height=%2212%22 fill=%22%23f5f5f5%22/></svg>" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="sr-status" class="sr-only" role="status" aria-live="polite"></div>
+<div id="error-toast" class="error-toast" hidden role="alert"></div>
+
+<header class="topbar">
+  <span class="brand">UNSEND</span>
+  <span class="privacy-note">Processed locally in your browser. Nothing is uploaded.</span>
+</header>
+
+<main>
+  <!-- ============ SCREEN 1: DROP ============ -->
+  <section id="drop-screen" class="drop-screen">
+    <h1>UNSEND</h1>
+    <p class="tagline">Make screenshots safe to share.</p>
+
+    <div id="dropzone" class="dropzone" tabindex="0" aria-label="Drop an image here, or choose a file">
+      <p class="dropzone-main">Drop an image here</p>
+      <p class="dropzone-or">or</p>
+      <button id="choose-btn" class="btn-primary" type="button">Choose image</button>
+      <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+      <p class="dropzone-hint">Paste a screenshot with Ctrl+V / Cmd+V</p>
+      <p class="dropzone-formats">JPEG · PNG · WebP</p>
+    </div>
+
+    <p class="footnote">
+      Everything — OCR, detection, redaction, export — runs on your device. UNSEND has no backend,
+      no accounts, and makes no network requests with your image.
+    </p>
+  </section>
+
+  <!-- ============ SCREEN 2: EDITOR ============ -->
+  <section id="editor-screen" class="editor-screen" hidden>
+    <div class="editor-header">
+      <button id="new-image-btn" class="btn-text" type="button">&larr; New image</button>
+      <span id="file-name" class="file-name"></span>
+    </div>
+
+    <div id="progress" class="progress" hidden>
+      <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+      <span id="progress-label" class="progress-label"></span>
+    </div>
+
+    <div class="editor-layout">
+      <!-- Canvas / image area -->
+      <div class="editor-main">
+        <div class="toolbar" role="toolbar" aria-label="Redaction tools">
+          <div class="toolbar-group">
+            <span class="toolbar-label">Style</span>
+            <button id="mode-black" class="mode-btn active" type="button" disabled>Black</button>
+            <button id="mode-pixelate" class="mode-btn" type="button" disabled>Pixelate</button>
+            <button id="mode-blur" class="mode-btn" type="button" disabled>Blur</button>
+          </div>
+          <div class="toolbar-group">
+            <button id="undo-btn" class="icon-btn" type="button" title="Undo (Ctrl+Z)">Undo</button>
+            <button id="redo-btn" class="icon-btn" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
+            <button id="delete-btn" class="icon-btn danger" type="button" title="Delete selected" disabled>Delete</button>
+          </div>
+          <div class="toolbar-group">
+            <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">&minus;</button>
+            <span id="zoom-level" class="zoom-level">100%</span>
+            <button id="zoom-in" class="icon-btn" type="button" aria-label="Zoom in">+</button>
+          </div>
+        </div>
+        <p class="blur-warning">Blur is visual obfuscation, not permanent redaction — it can sometimes be reversed. Use solid black when information must be permanently hidden.</p>
+
+        <div id="canvas-wrap" class="canvas-wrap">
+          <canvas id="canvas" tabindex="0" aria-label="Image editor canvas — drag to draw a redaction rectangle"></canvas>
+        </div>
+
+        <div id="metadata-panel" class="metadata-panel" hidden>
+          <h2>Metadata</h2>
+          <ul id="metadata-warnings"></ul>
+        </div>
+
+        <div class="safe-copy-options">
+          <h2>Safe copy options</h2>
+          <label><input id="apply-redactions" type="checkbox" checked disabled /> Apply redactions</label>
+          <label><input id="remove-metadata" type="checkbox" checked /> Remove image metadata</label>
+          <button id="safe-copy-btn" class="btn-primary" type="button">Create safe copy</button>
+        </div>
+
+        <div id="result-panel" class="result-panel" hidden>
+          <h2>Safe copy</h2>
+          <ul id="result-stats" class="result-stats"></ul>
+          <div class="result-actions">
+            <button id="download-btn" class="btn-primary" type="button">Download safe copy</button>
+            <button id="before-after-btn" class="btn-text" type="button">Before / after</button>
+            <button id="start-over-btn" class="btn-text" type="button">Start over</button>
+          </div>
+          <div id="compare-view" class="compare-view" hidden>
+            <div>
+              <p class="compare-label">Original</p>
+              <img id="compare-original" alt="Original image" />
+            </div>
+            <div>
+              <p class="compare-label">Safe copy</p>
+              <img id="compare-safe" alt="Redacted safe copy" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detections sidebar -->
+      <aside class="detections-panel" aria-label="Detected items">
+        <h2 id="detections-summary">Analyzing…</h2>
+        <div id="redact-all-container">
+          <button id="redact-all-btn" class="btn-secondary" type="button">Redact everything detected</button>
+        </div>
+        <div id="detections-list" class="detections-list"></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <span>UNSEND runs entirely on your device. No uploads, no accounts, no analytics.</span>
+</footer>
+
+<!-- Third-party, browser-only libraries (OCR + QR decoding). Loaded from a
+     CDN purely to fetch the library code itself — no image or user data is
+     ever sent anywhere. If you're deploying somewhere without CDN access,
+     vendor these two files locally and update the src attributes. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+
+<script src="js/utils.js"></script>
+<script src="js/detectors.js"></script>
+<script src="js/metadata.js"></script>
+<script src="js/ocr.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

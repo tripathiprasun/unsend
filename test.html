@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>UNSEND — tests</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; background: #fafaf9; color: #18181b; }
+  h1 { font-size: 1.1rem; letter-spacing: 0.04em; }
+  #summary { font-weight: 600; margin: 1rem 0; }
+  ul { list-style: none; padding: 0; }
+  li { padding: 0.35rem 0.5rem; border-bottom: 1px solid #eee; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  li.pass::before { content: "PASS  "; color: #166534; font-weight: 700; }
+  li.fail::before { content: "FAIL  "; color: #b91c1c; font-weight: 700; }
+  .error { color: #b91c1c; display: block; margin-top: 0.2rem; font-size: 0.8rem; }
+  canvas { display: none; }
+</style>
+</head>
+<body>
+<h1>UNSEND — test suite</h1>
+<p>Runs entirely in this page, no build tooling or network required. Open this file directly in a browser (or via a local server) to run it.</p>
+<div id="summary">Running…</div>
+<ul id="results"></ul>
+
+<script src="js/utils.js"></script>
+<script src="js/detectors.js"></script>
+<script src="js/metadata.js"></script>
+<script src="js/ocr.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/editor.js"></script>
+<script src="tests/tests.js"></script>
+<script>
+  const results = TestRunner.run();
+  const list = document.getElementById('results');
+  let passed = 0;
+  for (const r of results) {
+    const li = document.createElement('li');
+    li.className = r.pass ? 'pass' : 'fail';
+    li.textContent = r.name;
+    if (!r.pass) {
+      const err = document.createElement('span');
+      err.className = 'error';
+      err.textContent = r.error;
+      li.appendChild(err);
+    } else {
+      passed++;
+    }
+    list.appendChild(li);
+  }
+  document.getElementById('summary').textContent =
+    `${passed} / ${results.length} passed`;
+  document.getElementById('summary').style.color = passed === results.length ? '#166534' : '#b91c1c';
+</script>
+</body>
+</html>
